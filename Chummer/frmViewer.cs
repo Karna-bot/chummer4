@@ -14,6 +14,8 @@ namespace Chummer
 		private XmlDocument _objCharacterXML = new XmlDocument();
 		private string _strSelectedSheet = "Shadowrun 4";
 		private bool _blnLoading = false;
+		// Raw text produced by a text-output sheet (e.g. "Roll20 JSON"); null for ordinary HTML sheets.
+		private string _strTextOutput = null;
 		
 		#region Control Events
 		public frmViewer()
@@ -123,15 +125,27 @@ namespace Chummer
 
 		private void cmdSaveHTML_Click(object sender, EventArgs e)
 		{
-			// Save the generated output as HTML.
+			// Save the generated output as HTML (or as a .json file when the selected sheet is a JSON sheet).
 			string strSaveFile = "";
-			SaveFileDialog1.Filter = "HTML Page|*.htm";
+			if (_strTextOutput != null)
+			{
+				SaveFileDialog1.Filter = "JSON File|*.json";
+				SaveFileDialog1.DefaultExt = "json";
+			}
+			else
+				SaveFileDialog1.Filter = "HTML Page|*.htm";
 			SaveFileDialog1.Title = LanguageManager.Instance.GetString("Button_Viewer_SaveAsHtml");
 			SaveFileDialog1.ShowDialog();
 			strSaveFile = SaveFileDialog1.FileName;
 
 			if (strSaveFile == "")
 				return;
+
+			if (_strTextOutput != null)
+			{
+				File.WriteAllText(strSaveFile, _strTextOutput, new UTF8Encoding(false));
+				return;
+			}
 
 			TextWriter objWriter = new StreamWriter(strSaveFile, false, Encoding.UTF8);
 			objWriter.Write(webBrowser1.DocumentText);
@@ -184,9 +198,24 @@ namespace Chummer
 			objXSLTransform.Load(Application.StartupPath + Path.DirectorySeparatorChar + "sheets" + Path.DirectorySeparatorChar + _strSelectedSheet + ".xsl");
 
 			MemoryStream objStream = new MemoryStream();
-			XmlTextWriter objWriter = new XmlTextWriter(objStream, Encoding.UTF8);
 
-			objXSLTransform.Transform(_objCharacterXML, null, objWriter);
+			if (_strSelectedSheet.EndsWith("JSON", StringComparison.OrdinalIgnoreCase))
+			{
+				// Text-output sheet: transform to a string (honours <xsl:output method="text"/>), keep it for saving, and show it escaped in the browser.
+				StringWriter objTextWriter = new StringWriter();
+				objXSLTransform.Transform(_objCharacterXML, null, objTextWriter);
+				_strTextOutput = objTextWriter.ToString();
+				string strHtml = "<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/></head><body><pre style=\"white-space: pre-wrap; word-wrap: break-word;\">"
+					+ _strTextOutput.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;") + "</pre></body></html>";
+				byte[] arrBytes = new UTF8Encoding(false).GetBytes(strHtml);
+				objStream.Write(arrBytes, 0, arrBytes.Length);
+			}
+			else
+			{
+				_strTextOutput = null;
+				XmlTextWriter objWriter = new XmlTextWriter(objStream, Encoding.UTF8);
+				objXSLTransform.Transform(_objCharacterXML, null, objWriter);
+			}
 			objStream.Position = 0;
 
 			// This reads from a static file, outputs to an HTML file, then has the browser read from that file. For debugging purposes.
