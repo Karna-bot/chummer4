@@ -1,0 +1,14 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build chummer (debug)",
+      "type": "shell",
+      "command": "$ms = & \"${env:ProgramFiles(x86)}\\Microsoft Visual Studio\\Installer\\vswhere.exe\" -products * -latest -requires Microsoft.Component.MSBuild -find 'MSBuild\\**\\Bin\\MSBuild.exe' | Select-Object -First 1; & $ms Chummer\\Chummer.csproj /restore:false /p:Configuration=Debug /p:Platform=AnyCPU /v:m /nologo",
+      "options": { "shell": { "executable": "powershell.exe", "args": ["-NoProfile", "-Command"] } },
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": "$msCompile",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true }
+    }
+  ]
+}
