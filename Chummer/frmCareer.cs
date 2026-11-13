@@ -51,6 +51,7 @@ namespace Chummer
 			_objImprovementManager = new ImprovementManager(_objCharacter);
 			_objController = new MainController(_objCharacter);
 			InitializeComponent();
+			InitRoll20ExportMenu();
 
 			// Add EventHandlers for the MAG and RES enabled events and tab enabled events.
 			_objCharacter.MAGEnabledChanged += objCharacter_MAGEnabledChanged;
@@ -1980,6 +1981,116 @@ namespace Chummer
 			frmExportCharacter.CharacterXML = objCharacterXML;
 			frmExportCharacter.ShowDialog(this);
 		}
+
+		#region Roll20 export
+		// Dernier dossier utilise pour enregistrer un JSON Roll20 (pour la session en cours).
+		private static string _strRoll20Directory = null;
+
+		/// <summary>
+		/// Ajoute au menu Fichier un sous-menu "Exporter vers Roll20" (personnage / vehicules et drones, presse-papiers ou fichier).
+		/// </summary>
+		private void InitRoll20ExportMenu()
+		{
+			ToolStripMenuItem objParent = mnuFileExport.OwnerItem as ToolStripMenuItem;
+			if (objParent == null)
+				return;
+
+			bool blnFrench = (GlobalOptions.Instance.Language ?? string.Empty).StartsWith("fr", StringComparison.OrdinalIgnoreCase);
+			ToolStripMenuItem objRoll20 = new ToolStripMenuItem(blnFrench ? "Exporter vers Roll20" : "Export to Roll20");
+			objRoll20.Name = "mnuFileExportRoll20";
+			objRoll20.MergeAction = MergeAction.Insert;
+			objRoll20.MergeIndex = 10;
+
+			objRoll20.DropDownItems.Add(blnFrench ? "Personnage : copier dans le presse-papiers" : "Character: copy to clipboard",
+				null, (o, a) => ExportRoll20("Roll20 JSON", true));
+			objRoll20.DropDownItems.Add(blnFrench ? "Personnage : enregistrer un fichier..." : "Character: save to file...",
+				null, (o, a) => ExportRoll20("Roll20 JSON", false));
+			objRoll20.DropDownItems.Add(new ToolStripSeparator());
+			objRoll20.DropDownItems.Add(blnFrench ? "Vehicules et drones : copier dans le presse-papiers" : "Vehicles and drones: copy to clipboard",
+				null, (o, a) => ExportRoll20("Roll20 JSON Vehicles", true));
+			objRoll20.DropDownItems.Add(blnFrench ? "Vehicules et drones : enregistrer un fichier..." : "Vehicles and drones: save to file...",
+				null, (o, a) => ExportRoll20("Roll20 JSON Vehicles", false));
+
+			int intIndex = objParent.DropDownItems.IndexOf(mnuFileExport);
+			objParent.DropDownItems.Insert(intIndex < 0 ? objParent.DropDownItems.Count : intIndex + 1, objRoll20);
+		}
+
+		/// <summary>
+		/// Genere le JSON Roll20 (feuille strSheet de bin/sheets) sans ouvrir le visualiseur d'impression, puis le copie ou l'enregistre.
+		/// </summary>
+		private void ExportRoll20(string strSheet, bool blnClipboard)
+		{
+			bool blnFrench = (GlobalOptions.Instance.Language ?? string.Empty).StartsWith("fr", StringComparison.OrdinalIgnoreCase);
+			bool blnVehicles = strSheet.EndsWith("Vehicles", StringComparison.Ordinal);
+			if (blnVehicles && _objCharacter.Vehicles.Count == 0)
+			{
+				MessageBox.Show(blnFrench ? "Ce personnage n'a ni vehicule ni drone." : "This character has no vehicle or drone.",
+					"Roll20", MessageBoxButtons.OK, MessageBoxIcon.Information);
+				return;
+			}
+
+			try
+			{
+				// Meme XML que Fichier > Imprimer / Exporter.
+				MemoryStream objStream = new MemoryStream();
+				XmlTextWriter objWriter = new XmlTextWriter(objStream, Encoding.UTF8);
+				objWriter.WriteStartDocument();
+				objWriter.WriteStartElement("characters");
+				_objCharacter.PrintToStream(objStream, objWriter);
+				objWriter.WriteEndElement();
+				objWriter.WriteEndDocument();
+				objWriter.Flush();
+				objStream.Flush();
+				objStream.Position = 0;
+				XmlDocument objCharacterXML = new XmlDocument();
+				objCharacterXML.LoadXml(new StreamReader(objStream).ReadToEnd());
+				objWriter.Close();
+				objStream.Close();
+
+				System.Xml.Xsl.XslCompiledTransform objTransform = new System.Xml.Xsl.XslCompiledTransform();
+				objTransform.Load(Application.StartupPath + Path.DirectorySeparatorChar + "sheets" + Path.DirectorySeparatorChar + strSheet + ".xsl");
+				StringWriter objText = new StringWriter();
+				objTransform.Transform(objCharacterXML, null, objText);
+				string strJson = objText.ToString();
+
+				if (blnClipboard)
+				{
+					Clipboard.SetText(strJson, TextDataFormat.UnicodeText);
+					MessageBox.Show(blnFrench
+						? "JSON Roll20 copie (" + strJson.Length + " caracteres).\nDans Roll20 : ouvrez le handout \"Import NPC\", collez dans ses Notes (Ctrl+V), puis tapez !import-npc dans le chat."
+						: "Roll20 JSON copied (" + strJson.Length + " characters).\nIn Roll20: open the \"Import NPC\" handout, paste into its Notes (Ctrl+V), then type !import-npc in the chat.",
+						"Roll20", MessageBoxButtons.OK, MessageBoxIcon.Information);
+					return;
+				}
+
+				// Nom propose : Alias (ou Nom) du personnage, dans le dossier du dernier export ou du fichier .chum.
+				string strName = !string.IsNullOrEmpty(_objCharacter.Alias) ? _objCharacter.Alias : _objCharacter.Name;
+				if (string.IsNullOrEmpty(strName))
+					strName = "personnage";
+				foreach (char chrInvalid in Path.GetInvalidFileNameChars())
+					strName = strName.Replace(chrInvalid, '_');
+				using (SaveFileDialog objDialog = new SaveFileDialog())
+				{
+					objDialog.Filter = "JSON|*.json";
+					objDialog.DefaultExt = "json";
+					objDialog.FileName = strName + (blnVehicles ? "_vehicules" : "") + "_roll20.json";
+					if (_strRoll20Directory != null && Directory.Exists(_strRoll20Directory))
+						objDialog.InitialDirectory = _strRoll20Directory;
+					else if (!string.IsNullOrEmpty(_objCharacter.FileName) && Directory.Exists(Path.GetDirectoryName(_objCharacter.FileName)))
+						objDialog.InitialDirectory = Path.GetDirectoryName(_objCharacter.FileName);
+					if (objDialog.ShowDialog(this) != DialogResult.OK)
+						return;
+					File.WriteAllText(objDialog.FileName, strJson, new UTF8Encoding(false));
+					_strRoll20Directory = Path.GetDirectoryName(objDialog.FileName);
+				}
+			}
+			catch (Exception ex)
+			{
+				MessageBox.Show((blnFrench ? "Export Roll20 impossible : " : "Roll20 export failed: ") + ex.Message,
+					"Roll20", MessageBoxButtons.OK, MessageBoxIcon.Error);
+			}
+		}
+		#endregion
 
 		private void mnuSpecialCyberzombie_Click(object sender, EventArgs e)
 		{
