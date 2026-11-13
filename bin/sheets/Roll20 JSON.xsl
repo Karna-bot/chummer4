@@ -141,6 +141,39 @@
     "underbarrel":[<xsl:for-each select="underbarrel/weapon"><xsl:if test="position()>1">,</xsl:if><xsl:apply-templates select="."/></xsl:for-each>]}
   </xsl:template>
 
+
+  <!-- ===== Vehicule / drone ===== -->
+  <xsl:template match="vehicle">
+    <xsl:variable name="alias"><xsl:choose><xsl:when test="normalize-space(vehiclename) != ''"><xsl:value-of select="vehiclename"/></xsl:when><xsl:otherwise><xsl:value-of select="name"/></xsl:otherwise></xsl:choose></xsl:variable>
+    <xsl:variable name="acc"><xsl:choose><xsl:when test="contains(accel,'/')"><xsl:value-of select="substring-before(accel,'/')"/></xsl:when><xsl:otherwise><xsl:value-of select="accel"/></xsl:otherwise></xsl:choose></xsl:variable>
+    {"type":"vehicle",
+    <xsl:call-template name="kstr"><xsl:with-param name="k" select="'name'"/><xsl:with-param name="v" select="$alias"/></xsl:call-template>,
+    <xsl:call-template name="kstr"><xsl:with-param name="k" select="'model'"/><xsl:with-param name="v" select="name"/></xsl:call-template>,
+    <xsl:call-template name="kstr"><xsl:with-param name="k" select="'category'"/><xsl:with-param name="v" select="category"/></xsl:call-template>,
+    <xsl:call-template name="kbool"><xsl:with-param name="k" select="'drone'"/><xsl:with-param name="v" select="substring('True',1,4*number(starts-with(category,'Drones')))"/></xsl:call-template>,
+    <xsl:call-template name="knum"><xsl:with-param name="k" select="'handling'"/><xsl:with-param name="v" select="handling"/></xsl:call-template>,
+    <xsl:call-template name="kstr"><xsl:with-param name="k" select="'accel'"/><xsl:with-param name="v" select="accel"/></xsl:call-template>,
+    <xsl:call-template name="knum"><xsl:with-param name="k" select="'acceleration'"/><xsl:with-param name="v" select="$acc"/></xsl:call-template>,
+    <xsl:call-template name="knum"><xsl:with-param name="k" select="'speed'"/><xsl:with-param name="v" select="speed"/></xsl:call-template>,
+    <xsl:call-template name="knum"><xsl:with-param name="k" select="'pilot'"/><xsl:with-param name="v" select="pilot"/></xsl:call-template>,
+    <xsl:call-template name="knum"><xsl:with-param name="k" select="'body'"/><xsl:with-param name="v" select="body"/></xsl:call-template>,
+    <xsl:call-template name="knum"><xsl:with-param name="k" select="'armor'"/><xsl:with-param name="v" select="armor"/></xsl:call-template>,
+    <xsl:call-template name="knum"><xsl:with-param name="k" select="'sensor'"/><xsl:with-param name="v" select="sensor"/></xsl:call-template>,
+    <xsl:call-template name="knum"><xsl:with-param name="k" select="'sensor_signal'"/><xsl:with-param name="v" select="sensorsignal"/></xsl:call-template>,
+    <xsl:call-template name="knum"><xsl:with-param name="k" select="'response'"/><xsl:with-param name="v" select="response"/></xsl:call-template>,
+    <xsl:call-template name="knum"><xsl:with-param name="k" select="'system'"/><xsl:with-param name="v" select="system"/></xsl:call-template>,
+    <xsl:call-template name="knum"><xsl:with-param name="k" select="'signal'"/><xsl:with-param name="v" select="signal"/></xsl:call-template>,
+    <xsl:call-template name="knum"><xsl:with-param name="k" select="'firewall'"/><xsl:with-param name="v" select="firewall"/></xsl:call-template>,
+    <xsl:call-template name="knum"><xsl:with-param name="k" select="'device_rating'"/><xsl:with-param name="v" select="devicerating"/></xsl:call-template>,
+    <xsl:call-template name="knum"><xsl:with-param name="k" select="'physical_max'"/><xsl:with-param name="v" select="physicalcm"/></xsl:call-template>,
+    <xsl:call-template name="knum"><xsl:with-param name="k" select="'physical_damage'"/><xsl:with-param name="v" select="physicalcmfilled"/></xsl:call-template>,
+    <xsl:call-template name="kint"><xsl:with-param name="k" select="'cost'"/><xsl:with-param name="v" select="cost"/></xsl:call-template>,
+    <xsl:call-template name="kstr"><xsl:with-param name="k" select="'source'"/><xsl:with-param name="v" select="source"/></xsl:call-template>,
+    "mods":[<xsl:for-each select="mods/mod"><xsl:if test="position()>1">,</xsl:if>{<xsl:call-template name="kstr"><xsl:with-param name="k" select="'name'"/><xsl:with-param name="v" select="name"/></xsl:call-template>,<xsl:call-template name="kstr"><xsl:with-param name="k" select="'category'"/><xsl:with-param name="v" select="category"/></xsl:call-template>,<xsl:call-template name="knum"><xsl:with-param name="k" select="'slots'"/><xsl:with-param name="v" select="slots"/></xsl:call-template>,<xsl:call-template name="knum"><xsl:with-param name="k" select="'rating'"/><xsl:with-param name="v" select="rating"/></xsl:call-template>,<xsl:call-template name="kstr"><xsl:with-param name="k" select="'limit'"/><xsl:with-param name="v" select="limit"/></xsl:call-template>,<xsl:call-template name="kbool"><xsl:with-param name="k" select="'included'"/><xsl:with-param name="v" select="included"/></xsl:call-template>}</xsl:for-each>],
+    "weapons":[<xsl:for-each select="weapons/weapon | mods/mod/weapons/weapon"><xsl:if test="position()>1">,</xsl:if><xsl:apply-templates select="."/></xsl:for-each>],
+    "gear":[<xsl:for-each select="gears//gear"><xsl:if test="position()>1">,</xsl:if>{<xsl:call-template name="kstr"><xsl:with-param name="k" select="'name'"/><xsl:with-param name="v" select="name_english"/></xsl:call-template>,<xsl:call-template name="kstr"><xsl:with-param name="k" select="'category'"/><xsl:with-param name="v" select="category_english"/></xsl:call-template>,<xsl:call-template name="knum"><xsl:with-param name="k" select="'rating'"/><xsl:with-param name="v" select="rating"/></xsl:call-template>,<xsl:call-template name="knum"><xsl:with-param name="k" select="'quantity'"/><xsl:with-param name="v" select="qty"/></xsl:call-template>,<xsl:call-template name="kstr"><xsl:with-param name="k" select="'extra'"/><xsl:with-param name="v" select="extra"/></xsl:call-template>,<xsl:call-template name="kstr"><xsl:with-param name="k" select="'parent'"/><xsl:with-param name="v" select="ancestor::gear[1]/name_english"/></xsl:call-template>}</xsl:for-each>]}
+  </xsl:template>
+
   <!-- ===== Document ===== -->
   <xsl:template match="/characters/character">
     <xsl:variable name="alias" select="normalize-space(alias)"/>
@@ -294,6 +327,7 @@
 <xsl:call-template name="kstr"><xsl:with-param name="k" select="'lifestyle'"/><xsl:with-param name="v" select="name"/></xsl:call-template>,
 <xsl:call-template name="knum"><xsl:with-param name="k" select="'months'"/><xsl:with-param name="v" select="months"/></xsl:call-template>,
 <xsl:call-template name="kint"><xsl:with-param name="k" select="'cost'"/><xsl:with-param name="v" select="cost"/></xsl:call-template>}</xsl:for-each>],
+"vehicles":[<xsl:for-each select="vehicles/vehicle"><xsl:if test="position()>1">,</xsl:if><xsl:apply-templates select="."/></xsl:for-each>],
 "gear":[<xsl:for-each select="gears//gear"><xsl:if test="position()>1">,</xsl:if>
 {<xsl:call-template name="kstr"><xsl:with-param name="k" select="'name'"/><xsl:with-param name="v" select="name_english"/></xsl:call-template>,
 <xsl:call-template name="kstr"><xsl:with-param name="k" select="'custom_name'"/><xsl:with-param name="v" select="gearname"/></xsl:call-template>,
