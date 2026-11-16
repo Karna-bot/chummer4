@@ -41,9 +41,6 @@ mkdir "%PKG%\saves"
 
 echo Creation du zip...
 powershell -NoProfile -Command "Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::CreateFromDirectory('%STAGE%', '%OUT%', [System.IO.Compression.CompressionLevel]::Optimal, $false)"
-:zipDone
-:psZip
-powershell -NoProfile -Command "Compress-Archive -Path '%STAGE%\*' -DestinationPath '%OUT%'"
 if not exist "%OUT%" goto :zipfail
 powershell -NoProfile -Command "Add-Type -AssemblyName System.IO.Compression.FileSystem; $z=[System.IO.Compression.ZipFile]::OpenRead('%OUT%'); $n=$z.Entries.Count; $z.Dispose(); if ($n -lt 10) { exit 1 } else { Write-Host ('Entrees dans le zip : ' + $n) }"
 if errorlevel 1 goto :zipfail
