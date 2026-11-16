@@ -17,35 +17,36 @@ set "OUT=%~dp0dist\ChummerRoll20_%STAMP%.zip"
 
 if exist "%STAGE%" rmdir /s /q "%STAGE%"
 mkdir "%STAGE%"
+set "PKG=%STAGE%\Chummer4_Roll20"
+mkdir "%PKG%"
 if not exist "%~dp0dist" mkdir "%~dp0dist"
 if exist "%OUT%" del "%OUT%"
 
 echo Copie des fichiers...
-robocopy "%SRC%" "%STAGE%" /E /XD saves /XF ChummerGenSR4.exe *.pdb *.vshost.exe* /NFL /NDL /NJH /NJS /NP
+robocopy "%SRC%" "%PKG%" /E /XD saves /XF ChummerGenSR4.exe *.pdb *.vshost.exe* /NFL /NDL /NJH /NJS /NP
 if errorlevel 8 goto :copyfail
-mkdir "%STAGE%\saves"
+mkdir "%PKG%\saves"
 
-> "%STAGE%\LISEZMOI.txt" echo Chummer 4 - version de test avec export Roll20
->> "%STAGE%\LISEZMOI.txt" echo.
->> "%STAGE%\LISEZMOI.txt" echo 1. Avant de decompresser le zip : clic droit sur le zip, Proprietes, cocher "Debloquer", OK.
->> "%STAGE%\LISEZMOI.txt" echo 2. Decompresser le dossier complet, puis lancer ChummerGenSR4_Debug.exe.
->> "%STAGE%\LISEZMOI.txt" echo    Si Windows affiche "Windows a protege votre PC" : Informations complementaires, puis Executer quand meme.
->> "%STAGE%\LISEZMOI.txt" echo    Il faut .NET Framework 4.8 (present sur Windows 11 et Windows 10 a jour).
->> "%STAGE%\LISEZMOI.txt" echo 3. Options : decocher la mise a jour automatique.
->> "%STAGE%\LISEZMOI.txt" echo 4. Ouvrir votre personnage en mode Carriere : Fichier, Exporter vers Roll20.
->> "%STAGE%\LISEZMOI.txt" echo    Copier dans le presse-papiers : coller ensuite dans le handout "Import NPC" de Roll20 (ou envoyer le texte au MJ).
->> "%STAGE%\LISEZMOI.txt" echo    Enregistrer un fichier : envoyer le .json au MJ.
->> "%STAGE%\LISEZMOI.txt" echo 5. Signaler au MJ toute erreur a l'ouverture d'un .chum ou tout JSON incomplet.
+> "%PKG%\LISEZMOI.txt" echo Chummer 4 - version de test avec export Roll20
+>> "%PKG%\LISEZMOI.txt" echo.
+>> "%PKG%\LISEZMOI.txt" echo 1. Avant de decompresser le zip : clic droit sur le zip, Proprietes, cocher "Debloquer", OK.
+>> "%PKG%\LISEZMOI.txt" echo 2. Decompresser le dossier complet, puis lancer ChummerGenSR4_Debug.exe.
+>> "%PKG%\LISEZMOI.txt" echo    Si Windows affiche "Windows a protege votre PC" : Informations complementaires, puis Executer quand meme.
+>> "%PKG%\LISEZMOI.txt" echo    Il faut .NET Framework 4.8 (present sur Windows 11 et Windows 10 a jour).
+>> "%PKG%\LISEZMOI.txt" echo 3. Options : decocher la mise a jour automatique.
+>> "%PKG%\LISEZMOI.txt" echo 4. Ouvrir votre personnage en mode Carriere : Fichier, Exporter vers Roll20.
+>> "%PKG%\LISEZMOI.txt" echo    Copier dans le presse-papiers : coller ensuite dans le handout "Import NPC" de Roll20 (ou envoyer le texte au MJ).
+>> "%PKG%\LISEZMOI.txt" echo    Enregistrer un fichier : envoyer le .json au MJ.
+>> "%PKG%\LISEZMOI.txt" echo 5. Signaler au MJ toute erreur a l'ouverture d'un .chum ou tout JSON incomplet.
 
 echo Creation du zip...
-where tar >nul 2>nul
-if errorlevel 1 goto :psZip
-tar -a -c -f "%OUT%" -C "%STAGE%" .
-goto :zipDone
+powershell -NoProfile -Command "Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::CreateFromDirectory('%STAGE%', '%OUT%', [System.IO.Compression.CompressionLevel]::Optimal, $false)"
+:zipDone
 :psZip
 powershell -NoProfile -Command "Compress-Archive -Path '%STAGE%\*' -DestinationPath '%OUT%'"
-:zipDone
 if not exist "%OUT%" goto :zipfail
+powershell -NoProfile -Command "Add-Type -AssemblyName System.IO.Compression.FileSystem; $z=[System.IO.Compression.ZipFile]::OpenRead('%OUT%'); $n=$z.Entries.Count; $z.Dispose(); if ($n -lt 10) { exit 1 } else { Write-Host ('Entrees dans le zip : ' + $n) }"
+if errorlevel 1 goto :zipfail
 
 rmdir /s /q "%STAGE%"
 echo.
