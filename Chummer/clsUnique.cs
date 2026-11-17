@@ -6109,15 +6109,26 @@ namespace Chummer
 		{
 			get
 			{
-				if (_strCapacity.Contains("Rating"))
+				// Older saved characters can store an empty capacity (<capacity />): look it up in programs.xml, else treat it as 0.
+				string strCapacityValue = _strCapacity;
+				if (string.IsNullOrEmpty(strCapacityValue))
+				{
+					XmlNode objXmlCapacityNode = XmlManager.Instance.Load("programs.xml").SelectSingleNode("/chummer/programs/program[name = \"" + _strName + "\"]");
+					if (objXmlCapacityNode != null && objXmlCapacityNode["capacity"] != null)
+						strCapacityValue = objXmlCapacityNode["capacity"].InnerText;
+				}
+				if (string.IsNullOrEmpty(strCapacityValue))
+					return 0;
+
+				if (strCapacityValue.Contains("Rating"))
 				{
 					// If the Capaicty is determined by the Rating, evaluate the expression.
 					XmlDocument objXmlDocument = new XmlDocument();
 					XPathNavigator nav = objXmlDocument.CreateNavigator();
 
 					// XPathExpression cannot evaluate while there are square brackets, so remove them if necessary.
-					bool blnSquareBrackets = _strCapacity.Contains('[');
-					string strCapacity = _strCapacity;
+					bool blnSquareBrackets = strCapacityValue.Contains('[');
+					string strCapacity = strCapacityValue;
 					if (blnSquareBrackets)
 						strCapacity = strCapacity.Substring(1, strCapacity.Length - 2);
 					strCapacity = strCapacity.Replace("/", " div ");
@@ -6130,7 +6141,8 @@ namespace Chummer
 				else
 				{
 					// Just a straight Capacity, so return the value.
-					return Convert.ToInt32(_strCapacity);
+					int intCapacity;
+					return int.TryParse(strCapacityValue, out intCapacity) ? intCapacity : 0;
 				}
 			}
 		}
