@@ -40,9 +40,7 @@ mkdir "%PKG%\saves"
 >> "%PKG%\LISEZMOI.txt" echo 5. Signaler au MJ toute erreur a l'ouverture d'un .chum ou tout JSON incomplet.
 
 echo Creation du zip...
-powershell -NoProfile -Command "Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::CreateFromDirectory('%STAGE%', '%OUT%', [System.IO.Compression.CompressionLevel]::Optimal, $false)"
-if not exist "%OUT%" goto :zipfail
-powershell -NoProfile -Command "Add-Type -AssemblyName System.IO.Compression.FileSystem; $z=[System.IO.Compression.ZipFile]::OpenRead('%OUT%'); $n=$z.Entries.Count; $z.Dispose(); if ($n -lt 10) { exit 1 } else { Write-Host ('Entrees dans le zip : ' + $n) }"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Add-Type -AssemblyName System.IO.Compression.FileSystem; [IO.Compression.ZipFile]::CreateFromDirectory('%STAGE%','%OUT%',[IO.Compression.CompressionLevel]::Optimal,$false); $z=[IO.Compression.ZipFile]::OpenRead('%OUT%'); $n=$z.Entries.Count; $z.Dispose(); Write-Host ('Fichiers dans le zip : ' + $n); if($n -lt 10){exit 1}"
 if errorlevel 1 goto :zipfail
 
 rmdir /s /q "%STAGE%"
