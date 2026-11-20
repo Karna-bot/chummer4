@@ -328,6 +328,14 @@
 <xsl:call-template name="knum"><xsl:with-param name="k" select="'months'"/><xsl:with-param name="v" select="months"/></xsl:call-template>,
 <xsl:call-template name="kint"><xsl:with-param name="k" select="'cost'"/><xsl:with-param name="v" select="cost"/></xsl:call-template>}</xsl:for-each>],
 "vehicles":[<xsl:for-each select="vehicles/vehicle"><xsl:if test="position()>1">,</xsl:if><xsl:apply-templates select="."/></xsl:for-each>],
+"spirits":[<xsl:for-each select="spirits/spirit"><xsl:if test="position()>1">,</xsl:if>
+{<xsl:call-template name="kstr"><xsl:with-param name="k" select="'name'"/><xsl:with-param name="v" select="name"/></xsl:call-template>,
+<xsl:call-template name="kstr"><xsl:with-param name="k" select="'crittername'"/><xsl:with-param name="v" select="crittername"/></xsl:call-template>,
+<xsl:call-template name="kstr"><xsl:with-param name="k" select="'kind'"/><xsl:with-param name="v" select="type"/></xsl:call-template>,
+<xsl:call-template name="knum"><xsl:with-param name="k" select="'force'"/><xsl:with-param name="v" select="force"/></xsl:call-template>,
+<xsl:call-template name="knum"><xsl:with-param name="k" select="'services'"/><xsl:with-param name="v" select="services"/></xsl:call-template>,
+<xsl:call-template name="kbool"><xsl:with-param name="k" select="'bound'"/><xsl:with-param name="v" select="bound"/></xsl:call-template>,
+<xsl:call-template name="kstr"><xsl:with-param name="k" select="'notes'"/><xsl:with-param name="v" select="notes"/></xsl:call-template>}</xsl:for-each>],
 "gear":[<xsl:for-each select="gears//gear"><xsl:if test="position()>1">,</xsl:if>
 {<xsl:call-template name="kstr"><xsl:with-param name="k" select="'name'"/><xsl:with-param name="v" select="name_english"/></xsl:call-template>,
 <xsl:call-template name="kstr"><xsl:with-param name="k" select="'custom_name'"/><xsl:with-param name="v" select="gearname"/></xsl:call-template>,
